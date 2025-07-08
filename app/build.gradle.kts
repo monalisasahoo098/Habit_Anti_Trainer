@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -40,6 +41,20 @@ android {
 }
 
 dependencies {
+    val nav_version = "2.9.0"
+
+    //Jetpack Navigation for Compose
+    implementation("androidx.navigation:navigation-compose:$nav_version")
+    //firebase sdk
+    implementation(platform("com.google.firebase:firebase-bom:33.15.0"))
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation ("com.google.android.gms:play-services-auth:20.7.0")
+    implementation ("com.google.firebase:firebase-firestore-ktx:24.10.3")
+    implementation ("com.google.firebase:firebase-messaging:24.0.0")
+    implementation("androidx.compose.material3:material3:1.2.1")
+    implementation("com.google.android.gms:play-services-safetynet:18.0.1")
+
+    
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -49,6 +64,8 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

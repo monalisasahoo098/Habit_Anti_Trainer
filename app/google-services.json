@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1006701794244",
+    "project_id": "habitantitrainer",
+    "storage_bucket": "habitantitrainer.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1006701794244:android:c9487954d8bfb2a87f0a91",
+        "android_client_info": {
+          "package_name": "com.example.habitantitrainer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1006701794244-cren5bi5b8ojegsbfg7va49e5g0eu5us.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.habitantitrainer",
+            "certificate_hash": "35bb5b086f14ee075f18d7183ddeb348ba842481"
+          }
+        },
+        {
+          "client_id": "1006701794244-c4kq2s7cbcr1kvmqkehop6ihrtqs7507.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBWEVnsv3v_cRiwj-xPBujALWcLsj-y4cc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1006701794244-c4kq2s7cbcr1kvmqkehop6ihrtqs7507.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
