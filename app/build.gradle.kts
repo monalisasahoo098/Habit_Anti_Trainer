@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.implementation
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -53,6 +55,7 @@ dependencies {
     implementation ("com.google.firebase:firebase-messaging:24.0.0")
     implementation("androidx.compose.material3:material3:1.2.1")
     implementation("com.google.android.gms:play-services-safetynet:18.0.1")
+
 
     
 

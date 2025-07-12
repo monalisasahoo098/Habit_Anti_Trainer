@@ -1,11 +1,12 @@
 package com.example.habitantitrainer
 
 import android.app.Activity
-import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -19,29 +20,29 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.google.android.gms.auth.api.identity.BeginSignInRequest
-import com.google.android.gms.auth.api.signin.*
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignInScreen(navController: NavHostController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
     val context = LocalContext.current
     val activity = context as Activity
-    val db = FirebaseFirestore.getInstance()
     val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
 
-    // Google Sign In launcher
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
         try {
@@ -49,10 +50,12 @@ fun SignInScreen(navController: NavHostController) {
             val credential = GoogleAuthProvider.getCredential(account.idToken, null)
             auth.signInWithCredential(credential).addOnCompleteListener { authResult ->
                 if (authResult.isSuccessful) {
-                    Toast.makeText(context, "Google Sign In Successful", Toast.LENGTH_SHORT).show()
-                    navController.navigate(Screen.AboutScreen.route)
+                    val uid = auth.currentUser?.uid
+                    uid?.let {
+                        checkUserProfileAndNavigate(uid, navController, db, context)
+                    }
                 } else {
-                    Toast.makeText(context, "Google Sign In Failed", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Google Sign-In Failed", Toast.LENGTH_SHORT).show()
                 }
             }
         } catch (e: Exception) {
@@ -60,16 +63,13 @@ fun SignInScreen(navController: NavHostController) {
         }
     }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
+    Surface(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(Color(0xFF001F3F), Color(0xFF003366))
+                    Brush.verticalGradient(
+                        listOf(Color(0xFF001F3F), Color(0xFF003366))
                     )
                 ),
             contentAlignment = Alignment.Center
@@ -77,10 +77,10 @@ fun SignInScreen(navController: NavHostController) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 32.dp),
+                    .padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Sign In", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White, fontFamily = FontFamily.Serif)
+                Text("Sign In", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -89,8 +89,10 @@ fun SignInScreen(navController: NavHostController) {
                     onValueChange = { email = it },
                     placeholder = { Text("Email", color = Color.LightGray) },
                     textStyle = TextStyle(color = Color.White),
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
                     singleLine = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
                     shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -106,11 +108,13 @@ fun SignInScreen(navController: NavHostController) {
                     onValueChange = { password = it },
                     placeholder = { Text("Password", color = Color.LightGray) },
                     textStyle = TextStyle(color = Color.White),
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF4FC3F7),
                         unfocusedBorderColor = Color.Gray
@@ -118,55 +122,53 @@ fun SignInScreen(navController: NavHostController) {
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
-
                 Row {
-                    Text("Forgot Password?", color = Color.LightGray)
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Forgot Password? ", color = Color.LightGray)
                     Text(
                         "Reset",
-                        color = Color(0xFF4FC3F7),
+                        color = Color(0xFFB0C4DE),
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable {
-                            navController.navigate(Screen.ResetScreen.route)
+                            navController.navigate(Screen.ProfileDetailScreen.route)
+
                         }
                     )
                 }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Email/Password Sign In Button
+                Spacer(modifier = Modifier.height(16.dp))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
                         .clip(RoundedCornerShape(25.dp))
-                        .background(Brush.horizontalGradient(listOf(Color(0xFF4FC3F7), Color(0xFF0288D1))))
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(Color(0xFF4FC3F7), Color(0xFF0288D1))
+                            )
+                        )
                         .clickable {
                             if (email.isNotBlank() && password.isNotBlank()) {
-                                db.collection("users")
-                                    .whereEqualTo("email", email)
-                                    .whereEqualTo("password", password)
-                                    .get()
-                                    .addOnSuccessListener { documents ->
-                                        if (!documents.isEmpty) {
-                                            Toast.makeText(context, "Sign In Successful", Toast.LENGTH_SHORT).show()
-                                            navController.navigate(Screen.AboutScreen.route)
-                                        } else {
-                                            Toast.makeText(context, "Incorrect email or password", Toast.LENGTH_SHORT).show()
+                                auth.signInWithEmailAndPassword(email, password)
+                                    .addOnSuccessListener {
+                                        val uid = auth.currentUser?.uid
+                                        uid?.let {
+                                            checkUserProfileAndNavigate(uid, navController, db, context)
                                         }
                                     }
+                                    .addOnFailureListener {
+                                        Toast.makeText(context, "Invalid email or password", Toast.LENGTH_SHORT).show()
+                                    }
                             } else {
-                                Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Please fill in all fields", Toast.LENGTH_SHORT).show()
                             }
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("Sign In", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
+                    Text("Sign In", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Google Sign-In Button
+                // Google Sign-In
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -179,21 +181,19 @@ fun SignInScreen(navController: NavHostController) {
                                 .requestEmail()
                                 .build()
                             val googleSignInClient = GoogleSignIn.getClient(context, gso)
-                            val signInIntent = googleSignInClient.signInIntent
-                            launcher.launch(signInIntent)
+                            launcher.launch(googleSignInClient.signInIntent)
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Image(
                             painter = painterResource(id = R.drawable.google),
                             contentDescription = "Google Logo",
-                            modifier = Modifier.size(34.dp).padding(end = 8.dp)
+                            modifier = Modifier
+                                .size(34.dp)
+                                .padding(end = 8.dp)
                         )
-                        Text("Continue with Google", color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight.Medium, fontFamily = FontFamily.Serif)
+                        Text("Continue with Google", color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight.Medium)
                     }
                 }
 
@@ -203,9 +203,7 @@ fun SignInScreen(navController: NavHostController) {
                     Text("Don't have an Account? ", color = Color.LightGray)
                     Text(
                         "Sign up",
-                        fontSize = 14.sp,
                         color = Color(0xFFB0C4DE),
-                        fontFamily = FontFamily.Serif,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable {
                             navController.navigate(Screen.SignUpScreen.route)
@@ -215,4 +213,34 @@ fun SignInScreen(navController: NavHostController) {
             }
         }
     }
+}
+
+// ✅ Enhanced Firestore Profile Check
+fun checkUserProfileAndNavigate(
+    uid: String,
+    navController: NavHostController,
+    db: FirebaseFirestore,
+    context: android.content.Context
+) {
+    db.collection("users").document(uid).get()
+        .addOnSuccessListener { document ->
+            val firstName = document.getString("firstName") ?: ""
+            val lastName = document.getString("lastName") ?: ""
+            val ageGroup = document.getString("ageGroup") ?: ""
+            val gender = document.getString("gender") ?: ""
+
+            if (
+                firstName.isNotBlank() &&
+                lastName.isNotBlank() &&
+                ageGroup.isNotBlank() &&
+                gender.isNotBlank()
+            ) {
+                navController.navigate(Screen.HabitScreen.route)
+            } else {
+                navController.navigate(Screen.AboutScreen.route)
+            }
+        }
+        .addOnFailureListener {
+            Toast.makeText(context, "Error checking profile", Toast.LENGTH_SHORT).show()
+        }
 }

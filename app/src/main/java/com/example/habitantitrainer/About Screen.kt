@@ -1,7 +1,6 @@
 package com.example.habitantitrainer
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,12 +19,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutScreen(navController: NavHostController) {
     val context = LocalContext.current
+    val auth = FirebaseAuth.getInstance()
+    val db = FirebaseFirestore.getInstance()
+    val currentUser = auth.currentUser
 
+    // User input states
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var selectedGender by remember { mutableStateOf("Male") }
@@ -38,7 +43,7 @@ fun AboutScreen(navController: NavHostController) {
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFF001F3F) // Deep blue background
+        color = Color(0xFF001F3F)
     ) {
         Column(
             modifier = Modifier
@@ -82,7 +87,6 @@ fun AboutScreen(navController: NavHostController) {
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    // Age Group Dropdown
                     Box(modifier = Modifier.fillMaxWidth()) {
                         OutlinedTextField(
                             value = selectedAgeGroup,
@@ -115,7 +119,6 @@ fun AboutScreen(navController: NavHostController) {
                         }
                     }
 
-                    // Gender
                     Text("Gender", color = Color.White, fontWeight = FontWeight.SemiBold)
                     Row {
                         listOf("Male", "Female", "Other").forEach { gender ->
@@ -132,7 +135,6 @@ fun AboutScreen(navController: NavHostController) {
                         }
                     }
 
-                    // Role
                     Text("Role", color = Color.White, fontWeight = FontWeight.SemiBold)
                     Row {
                         listOf("Student", "Employee").forEach { role ->
@@ -150,44 +152,44 @@ fun AboutScreen(navController: NavHostController) {
                         }
                     }
 
-                    // Phone + OTP
                     Column {
                         Text("Phone Number", color = Color.White, fontWeight = FontWeight.SemiBold)
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            OutlinedTextField(
-                                value = phoneNumber,
-                                onValueChange = { phoneNumber = it },
-                                label = { Text("Phone Number") },
-                                modifier = Modifier.weight(1f),
-                                keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(
-                                onClick = {
-                                    Toast.makeText(
-                                        context,
-                                        "OTP sent to $phoneNumber",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FC3F7))
-                            ) {
-                                Text("Verify")
-                            }
-                        }
+                        OutlinedTextField(
+                            value = phoneNumber,
+                            onValueChange = { phoneNumber = it },
+                            label = { Text("Phone Number") },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Phone)
+                        )
                     }
 
-                    // Submit
                     Button(
                         onClick = {
-                            Toast.makeText(
-                                context,
-                                "Submitted:\n$firstName $lastName\n$selectedGender, $selectedAgeGroup\n$selectedRole\nPhone: $phoneNumber",
-                                Toast.LENGTH_LONG
-                            ).show()
+                            val uid = currentUser?.uid
+                            if (uid != null) {
+                                val userData = hashMapOf(
+                                    "firstName" to firstName,
+                                    "lastName" to lastName,
+                                    "gender" to selectedGender,
+                                    "ageGroup" to selectedAgeGroup,
+                                    "role" to selectedRole,
+                                    "phone" to phoneNumber,
+                                    "email" to (currentUser.email ?: ""),
+                                    "uid" to uid
+                                )
+
+                                db.collection("users").document(uid)
+                                    .set(userData)
+                                    .addOnSuccessListener {
+                                        Toast.makeText(context, "User Info Saved", Toast.LENGTH_SHORT).show()
+                                        navController.navigate(Screen.HabitScreen.route)
+                                    }
+                                    .addOnFailureListener {
+                                        Toast.makeText(context, "Failed: ${it.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                            } else {
+                                Toast.makeText(context, "User not signed in", Toast.LENGTH_SHORT).show()
+                            }
                         },
                         modifier = Modifier
                             .fillMaxWidth()

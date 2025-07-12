@@ -23,6 +23,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
@@ -37,19 +38,13 @@ fun SignUpScreen(navController: NavHostController) {
 
     val context = LocalContext.current
     val db = FirebaseFirestore.getInstance()
+    val auth = FirebaseAuth.getInstance()
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
+    Surface(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color(0xFF001F3F), Color(0xFF003366))
-                    )
-                ),
+                .background(Brush.verticalGradient(listOf(Color(0xFF001F3F), Color(0xFF003366)))),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -58,13 +53,7 @@ fun SignUpScreen(navController: NavHostController) {
                     .padding(horizontal = 32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "Create Account",
-                    fontSize = 30.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    fontFamily = FontFamily.Serif
-                )
+                Text("Create Account", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = Color.White)
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -77,8 +66,8 @@ fun SignUpScreen(navController: NavHostController) {
                     placeholder = { Text("Full Name", color = Color.LightGray) },
                     textStyle = TextStyle(color = Color.White),
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF4FC3F7),
                         unfocusedBorderColor = Color.Gray
@@ -97,9 +86,9 @@ fun SignUpScreen(navController: NavHostController) {
                     placeholder = { Text("Email", color = Color.LightGray) },
                     textStyle = TextStyle(color = Color.White),
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF4FC3F7),
                         unfocusedBorderColor = Color.Gray
@@ -113,15 +102,15 @@ fun SignUpScreen(navController: NavHostController) {
                     value = password,
                     onValueChange = {
                         password = it
-                        passwordError = if (it.length < 6) "Password must be at least 6 characters" else ""
+                        passwordError = if (it.length < 6) "Password must be at least 6 characters with an uppercase letter" else ""
                     },
                     placeholder = { Text("Password", color = Color.LightGray) },
                     textStyle = TextStyle(color = Color.White),
                     singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                     modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF4FC3F7),
                         unfocusedBorderColor = Color.Gray
@@ -136,48 +125,39 @@ fun SignUpScreen(navController: NavHostController) {
                         .fillMaxWidth()
                         .height(50.dp)
                         .clip(RoundedCornerShape(25.dp))
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(Color(0xFF4FC3F7), Color(0xFF0288D1))
-                            )
-                        )
+                        .background(Brush.horizontalGradient(listOf(Color(0xFF4FC3F7), Color(0xFF0288D1))))
                         .clickable {
                             if (name.isBlank() || emailError.isNotEmpty() || passwordError.isNotEmpty()) {
                                 Toast.makeText(context, "Please fix errors above", Toast.LENGTH_SHORT).show()
                                 return@clickable
                             }
 
-                            val user = hashMapOf(
-                                "name" to name,
-                                "email" to email,
-                                "password" to password
-                            )
-
-                            db.collection("users").document(email).get()
-                                .addOnSuccessListener { document ->
-                                    if (document.exists()) {
-                                        Toast.makeText(context, "Account already exists with this email", Toast.LENGTH_SHORT).show()
+                            auth.createUserWithEmailAndPassword(email, password)
+                                .addOnCompleteListener { task ->
+                                    if (task.isSuccessful) {
+                                        val uid = auth.currentUser?.uid
+                                        val userData = hashMapOf(
+                                            "name" to name,
+                                            "email" to email
+                                        )
+                                        uid?.let {
+                                            db.collection("users").document(it).set(userData)
+                                                .addOnSuccessListener {
+                                                    Toast.makeText(context, "Sign Up Successful", Toast.LENGTH_SHORT).show()
+                                                    navController.navigate(Screen.SignInScreen.route)
+                                                }
+                                                .addOnFailureListener {
+                                                    Toast.makeText(context, "Firestore Error: ${it.message}", Toast.LENGTH_SHORT).show()
+                                                }
+                                        }
                                     } else {
-                                        db.collection("users").document(email).set(user)
-                                            .addOnSuccessListener {
-                                                Toast.makeText(context, "Sign Up Successful", Toast.LENGTH_SHORT).show()
-                                                navController.navigate(Screen.SignInScreen.route)
-                                            }
-                                            .addOnFailureListener {
-                                                Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
-                                            }
+                                        Toast.makeText(context, "Auth Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                                     }
                                 }
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "Sign Up",
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Serif
-                    )
+                    Text("Sign Up", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -185,10 +165,9 @@ fun SignUpScreen(navController: NavHostController) {
                 Row {
                     Text("Already Have an Account? ", color = Color.White)
                     Text(
-                        text = "Sign in",
-                        fontSize = 14.sp,
+                        "Sign in",
                         color = Color(0xFFB0C4DE),
-                        fontFamily = FontFamily.Serif,
+                        fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable {
                             navController.navigate(Screen.SignInScreen.route)
                         }

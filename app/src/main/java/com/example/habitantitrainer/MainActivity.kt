@@ -29,6 +29,9 @@ sealed class Screen(val route: String) {
     object ResetScreen : Screen("ResetScreen_screen")
     object OtpScreen : Screen("OtpScreen_screen")
     object AboutScreen : Screen("AboutScreen_screen")
+    object DashboardScreen : Screen("DashboardScreen_screen")
+    object HabitScreen : Screen("HabitScreen_screen")
+    object ProfileDetailScreen : Screen("ProfileDetailScreen_screen")
 
 
 }
@@ -60,7 +63,7 @@ fun AppNavigation() {
             SplashScreen(navController = navController)
         }
 
-        //welcome screen
+        // welcome screen
         composable(com.example.habitantitrainer.Screen.WelcomeScreen.route) {
             WelcomeScreen(navController = navController)
         }
@@ -104,6 +107,21 @@ fun AppNavigation() {
         // about screen
         composable(com.example.habitantitrainer.Screen.AboutScreen.route) {
             AboutScreen(navController = navController)
+        }
+
+        //habit screen
+        composable(com.example.habitantitrainer.Screen.HabitScreen.route) {
+            HabitScreen(navController = navController)
+        }
+
+        //dashboard screen
+        composable(com.example.habitantitrainer.Screen.DashboardScreen.route) {
+            DashboardScreen(navController = navController)
+        }
+
+        //profile detail screen
+        composable(com.example.habitantitrainer.Screen.ProfileDetailScreen.route) {
+            ProfileDetailScreen(navController = navController)
         }
 
 
